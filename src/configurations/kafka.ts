@@ -1,5 +1,4 @@
-import { Kafka, Partitioners, logLevel } from 'kafkajs';
-import chalk from 'chalk';
+import { Kafka, logLevel } from 'kafkajs';
 import dotenv from "dotenv";
 import { client } from './redis';
 import { Data } from './types';
@@ -46,16 +45,16 @@ export const getMessageFromKafka = async (topic: string) => {
                     console.log(oldData);
                     if (!oldData) {
                         await client.json.set(key, '$', {
-                            rounds:1,
-                            missileAmount: kafkaMessage.missileAmount ,
+                            rounds: 1,
+                            missileAmount: kafkaMessage.missileAmount,
                             creationTime: dateObj,
                             lastUpdateTime: dateObj
                         });
                     }
                     else {
-                        await client.json.set(key ,'$', {
+                        await client.json.set(key, '$', {
                             rounds: oldData.rounds + 1,
-                            missileAmount: oldData.missileAmount + kafkaMessage.missileAmount ,
+                            missileAmount: oldData.missileAmount + kafkaMessage.missileAmount,
                             creationTime: oldData.creationTime,
                             lastUpdateTime: dateObj
                         })
@@ -71,6 +70,3 @@ export const getMessageFromKafka = async (topic: string) => {
 };
 
 
-export const producer = kafka.producer({
-    createPartitioner: Partitioners.LegacyPartitioner,
-});
