@@ -37,28 +37,35 @@ export const getMessageFromKafka = async (topic: string) => {
                     const messageString = message.value && message.value.toString('utf-8');
                     const kafkaMessage = messageString && JSON.parse(messageString)
                     const dateObj = new Date(Number(message.key));
-                    console.log(dateObj);
                     kafkaMessage.time = Number(message.key)
-                    console.log(kafkaMessage);
                     const key = kafkaMessage.source + "-" + kafkaMessage.destination
                     const oldData = await client.json.get(key) as unknown as Data
-                    console.log(oldData);
-                    if (!oldData) {
-                        await client.json.set(key, '$', {
+                    console.log(kafkaMessage);
+                    // const currentValue = await client.json.get('countryes', `$.${key}`);
+                    await client.json.set('countryes', '$', {
+                        [key]: {
                             rounds: 1,
                             missileAmount: kafkaMessage.missileAmount,
-                            creationTime: dateObj,
-                            lastUpdateTime: dateObj
-                        });
-                    }
-                    else {
-                        await client.json.set(key, '$', {
-                            rounds: oldData.rounds + 1,
-                            missileAmount: oldData.missileAmount + kafkaMessage.missileAmount,
-                            creationTime: oldData.creationTime,
-                            lastUpdateTime: dateObj
-                        })
-                    }
+                            creationTime: kafkaMessage.time,
+                            lastUpdateTime: kafkaMessage.time
+                        }
+                    });
+                    // if (!oldData) {
+                    //     await client.json.set(key, '$', {
+                    //         rounds: 1,
+                    //         missileAmount: kafkaMessage.missileAmount,
+                    //         creationTime: kafkaMessage.time,
+                    //         lastUpdateTime: kafkaMessage.time
+                    //     });
+                    // }
+                    // else {
+                    //     await client.json.set(key, '$', {
+                    //         rounds: oldData.rounds + 1,
+                    //         missileAmount: oldData.missileAmount + kafkaMessage.missileAmount,
+                    //         creationTime: oldData.creationTime,
+                    //         lastUpdateTime: kafkaMessage.time
+                    //     })
+                    // }
                 } catch (error) {
                     console.error("Error processing Kafka message:", error);
                 }
