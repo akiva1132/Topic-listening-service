@@ -2,6 +2,7 @@ import { Kafka, Partitioners, logLevel } from 'kafkajs';
 import chalk from 'chalk';
 import dotenv from "dotenv";
 import { client } from './redis';
+import { Data } from './types';
 
 dotenv.config();
 
@@ -40,8 +41,25 @@ export const getMessageFromKafka = async (topic: string) => {
                     console.log(dateObj);
                     kafkaMessage.time = Number(message.key)
                     console.log(kafkaMessage);
-                    await client.get(kafkaMessage.source, kafkaMessage.destination);
-                    await client.set(kafkaMessage.source, String("test"));
+                    const key = kafkaMessage.source + "-" + kafkaMessage.destination
+                    const oldData = await client.json.get(key) as unknown as Data
+                    console.log(oldData);
+                    if (!oldData) {
+                        await client.json.set(key, '$', {
+                            rounds:1,
+                            missileAmount: kafkaMessage.missileAmount ,
+                            creationTime: dateObj,
+                            lastUpdateTime: dateObj
+                        });
+                    }
+                    else {
+                        await client.json.set(key ,'$', {
+                            rounds: oldData.rounds + 1,
+                            missileAmount: oldData.missileAmount + kafkaMessage.missileAmount ,
+                            creationTime: oldData.creationTime,
+                            lastUpdateTime: dateObj
+                        })
+                    }
                 } catch (error) {
                     console.error("Error processing Kafka message:", error);
                 }
